@@ -1,5 +1,5 @@
 .sidebar {
-  background: var(--card);
+  background: #66FFFF;
   border-radius: 0;
   padding: 20px 18px;
   display: flex;
@@ -111,7 +111,7 @@
   font-weight: 500;
   font-size: 16px;
   font-family: inherit;
-  color: var(--muted);
+  color: #000000;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;

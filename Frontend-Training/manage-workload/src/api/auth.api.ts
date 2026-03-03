@@ -7,7 +7,7 @@ import {
     ListUsers,
     User,
     Task,
-} from "../types/auth.types";
+} from "../types/auth.type";
 
 const API_URL = "http://localhost:8001/api";
 
@@ -53,4 +53,8 @@ export const deleteTask = (taskId: string) => {
 }
 export const getTaskStats = () => {
     return api.get<any>(`${API_URL}/task/stats/`);
+}
+
+export const deleteUser = (userId: string | number) => {
+    return api.delete(`${API_URL}/user/${userId}`);
 }

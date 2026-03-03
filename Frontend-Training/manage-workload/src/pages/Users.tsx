@@ -6,7 +6,7 @@ import PageHeader from "../components/PageHeader";
 import PaginationFooter from "../components/PaginationFooter";
 import SearchField from "../components/SearchField";
 import TableCard from "../components/TableCard";
-import { registerApi, getAllUsers, updateUser } from "../api/auth.api";
+import { registerApi, getAllUsers, updateUser, deleteUser } from "../api/auth.api";
 import { ListUsers, User } from "../types/auth.type";
 import { getCurrentUser } from "../utils/storage";
 
@@ -258,23 +258,14 @@ export default function Users() {
   const handleToggleUserStatus = async () => {
     if (!disableModalUser) return;
     
-    const currentStatus = getStatusKey(disableModalUser);
-    const newStatus = currentStatus === "inactive";
-    
     try {
-      await updateUser({
-        id: disableModalUser.id,
-        is_active: newStatus,
-      });
+      await deleteUser(disableModalUser.id);
       
-      const message = newStatus 
-        ? `Đã kích hoạt tài khoản "${disableModalUser.username}" thành công.`
-        : `Đã vô hiệu hóa tài khoản "${disableModalUser.username}" thành công.`;
-      setSuccessMessage(message);
+      setSuccessMessage(`Đã xóa người dùng "${disableModalUser.username}" thành công.`);
       await fetchUsers();
       closeDisableModal();
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.error || "Lỗi cập nhật trạng thái người dùng");
+      setErrorMessage(err.response?.data?.error || "Lỗi xóa người dùng");
     }
   };
   return (
@@ -398,12 +389,11 @@ export default function Users() {
                   </svg>
                 </IconButton>
                 <IconButton
-                  ariaLabel={getStatusKey(user) === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
+                  ariaLabel="Xóa người dùng"
                   onClick={() => openDisableModal(user)}
-                  variant={getStatusKey(user) === "active" ? "danger" : "success"}
+                  variant="danger"
                   className="h-8 w-8"
                 >
-                  {getStatusKey(user) === "active" ? (
                     <svg
                       viewBox="0 0 24 24"
                       className="h-5 w-5"
@@ -414,26 +404,11 @@ export default function Users() {
                       strokeLinejoin="round"
                       aria-hidden="true"
                     >
-                      <circle cx="12" cy="7" r="4" />
-                      <path d="M4 21c1.8-4 14.2-4 16 0" />
-                      <path d="M18 6l4 4m0-4l-4 4" />
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M9 10v6M15 10v6" />
+                        <path d="M5 6l1 14h12l1-14" />
                     </svg>
-                  ) : (
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.7}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <circle cx="12" cy="7" r="4" />
-                      <path d="M4 21c1.8-4 14.2-4 16 0" />
-                      <path d="M17 8l2 2 4-4" />
-                    </svg>
-                  )}
                 </IconButton>
               </div>
             )}
@@ -546,27 +521,14 @@ export default function Users() {
       >
           <header>
             <h3 className="mb-2 text-[1.05rem] font-semibold">
-              {getStatusKey(disableModalUser) === "active" 
-                ? "Vô hiệu hóa tài khoản" 
-                : "Kích hoạt tài khoản"}
+              Xác nhận xóa người dùng
             </h3>
           </header>
           <div className="grid gap-1.5 text-[0.9rem] text-[var(--muted)]">
-            {getStatusKey(disableModalUser) === "active" ? (
-              <>
                 <p className="m-0">
-                  Bạn có chắc chắn muốn vô hiệu hóa tài khoản "{disableModalUser.username}"?
+                  Bạn có chắc chắn muốn xóa tài khoản "{disableModalUser.username}"?
                 </p>
-                <p className="m-0">Người dùng sẽ không thể đăng nhập.</p>
-              </>
-            ) : (
-              <>
-                <p className="m-0">
-                  Bạn có chắc chắn muốn kích hoạt lại tài khoản "{disableModalUser.username}"?
-                </p>
-                <p className="m-0">Người dùng sẽ có thể đăng nhập trở lại.</p>
-              </>
-            )}
+                <p className="m-0">Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn.</p>
           </div>
           <div className="mt-4 flex justify-end gap-2.5">
             <button
@@ -577,13 +539,11 @@ export default function Users() {
               Hủy
             </button>
             <button 
-              className={getStatusKey(disableModalUser) === "active" 
-                ? "rounded-[8px] bg-[#ef4444] px-3.5 py-2 text-white hover:bg-[#dc2626]" 
-                : "rounded-[8px] bg-[#6366f1] px-3.5 py-2 text-white hover:bg-[#4f46e5]"}
+              className="rounded-[8px] bg-[#ef4444] px-3.5 py-2 text-white hover:bg-[#dc2626]" 
               type="button"
               onClick={handleToggleUserStatus}
             >
-              {getStatusKey(disableModalUser) === "active" ? "Vô hiệu hóa" : "Kích hoạt"}
+              Xóa người dùng
             </button>
           </div>
       </ModalShell>

@@ -140,8 +140,8 @@ app.get('/api/profile', authenticateToken, (req, res) => {
 });
 
 // Update User
-app.put('/api/user/update', authenticateToken, (req, res) => {
-    const { id, username, email, is_active, groups } = req.body;
+app.put('/api/user/update', authenticateToken, async (req, res) => {
+    const { id, username, email, password, is_active, groups } = req.body;
     
     // allow updating any user if admin, otherwise only self (simple check)
     if (!id && !req.user.id) return res.status(400).json({ error: 'Missing user ID' });
@@ -150,15 +150,24 @@ app.put('/api/user/update', authenticateToken, (req, res) => {
     let role = undefined;
     if (groups && groups.length > 0) role = groups[0];
 
-    db.run(
-        `UPDATE users SET 
-            username = COALESCE(?, username),
-            email = COALESCE(?, email),
-            is_active = COALESCE(?, is_active),
-            role = COALESCE(?, role)
-         WHERE id = ?`,
-        [username, email, is_active, role, targetId],
-        function (err) {
+    try {
+        let passwordHash = undefined;
+        let queryArgs = [username, email, is_active, role, targetId];
+        let setQuery = `UPDATE users SET 
+                username = COALESCE(?, username),
+                email = COALESCE(?, email),
+                is_active = COALESCE(?, is_active),
+                role = COALESCE(?, role)`;
+
+        if (password && password.trim().length > 0) {
+            passwordHash = await bcrypt.hash(password, 10);
+            setQuery += `, password = ?`;
+            queryArgs = [username, email, is_active, role, passwordHash, targetId];
+        }
+
+        setQuery += ` WHERE id = ?`;
+
+        db.run(setQuery, queryArgs, function (err) {
             if (err) {
                 console.error("[UPDATE_USER] Error:", err.message);
                 if (err.message.includes('UNIQUE constraint failed: users.username')) {
@@ -178,8 +187,25 @@ app.put('/api/user/update', authenticateToken, (req, res) => {
                 }
                 res.json({ success: true, user: row });
             });
-        }
-    );
+        });
+    } catch (err) {
+        console.error("[UPDATE_USER] Catch:", err.message);
+        res.status(500).json({ error: "Lỗi máy chủ khi cập nhật tài khoản." });
+    }
+});
+
+// Delete User
+app.delete('/api/user/:id', authenticateToken, (req, res) => {
+    // Basic check: prevent deleting self or without ID
+    const targetId = req.params.id;
+    if (!targetId) return res.status(400).json({ error: 'Missing user ID' });
+    if (targetId == req.user.id) return res.status(400).json({ error: 'Cannot delete your own account admin profile!' });
+    
+    db.run('DELETE FROM users WHERE id = ?', [targetId], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
+        res.json({ success: true, message: 'User deleted successfully' });
+    });
 });
 
 // ==========================
